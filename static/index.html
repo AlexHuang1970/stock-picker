@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 股票選股小幫手</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        label { display: block; margin-top: 1rem; }
+        select, input { width: 200px; padding: 0.5rem; }
+        button { margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-size: 1rem; }
+        table { border-collapse: collapse; width: 100%; margin-top: 2rem; }
+        th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: center; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>AI 股票選股小幫手</h1>
+    <form id="stockForm">
+        <label>
+            風險偏好：
+            <select id="risk">
+                <option value="low">低風險</option>
+                <option value="medium" selected>中等風險</option>
+                <option value="high">高風險</option>
+            </select>
+        </label>
+        <label>
+            投資目標：
+            <select id="goal">
+                <option value="growth" selected>成長型</option>
+                <option value="dividend">股息型</option>
+                <option value="value">價值型</option>
+            </select>
+        </label>
+        <button type="submit">開始選股</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('stockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const risk = document.getElementById('risk').value;
+            const goal = document.getElementById('goal').value;
+            const resp = await fetch('/screen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ risk, goal })
+            });
+            const data = await resp.json();
+            const resultDiv = document.getElementById('result');
+            if (data.length === 0) {
+                resultDiv.innerHTML = '<p>無符合條件的股票。</p>';
+                return;
+            }
+            let table = '<table><thead><tr>' +
+                '<th>代號</th><th>名稱</th><th>現價</th><th>本益比</th><th>股息殖利率 (%)</th><th>Beta</th><th>近月漲跌 (%)</th>' +
+                '</tr></thead><tbody>';
+            for (const stock of data) {
+                table += `<tr>
+                    <td>${stock.symbol}</td>
+                    <td>${stock.name}</td>
+                    <td>${stock.price !== null ? stock.price.toFixed(2) : 'N/A'}</td>
+                    <td>${stock.pe !== null ? stock.pe.toFixed(2) : 'N/A'}</td>
+                    <td>${stock.dividend_yield !== null ? stock.dividend_yield.toFixed(2) : 'N/A'}</td>
+                    <td>${stock.beta !== null ? stock.beta.toFixed(2) : 'N/A'}</td>
+                    <td>${stock.price_change_1m !== null ? stock.price_change_1m.toFixed(2) : 'N/A'}</td>
+                </tr>`;
+            }
+            table += '</tbody></table>';
+            resultDiv.innerHTML = table;
+        });
+    </script>
+</body>
+</html>
